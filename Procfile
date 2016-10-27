@@ -1,1 +1,1 @@
-web: newrelic-admin run-program gunicorn MsgSender.wsgi
+web: gunicorn lscslackbot.wsgi
