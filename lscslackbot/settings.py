@@ -19,13 +19,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'z$occ6@4f6o-&=ck3^v7dxj@mgca$fwm!r(vdqnp6_pa!pi(nu'
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
+TEMPLATE_DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -100,3 +98,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
+
+try:
+    SLACK_CLIENT_ID = os.environ["SLACK_CLIENT_ID"]
+    SLACK_CLIENT_SECRET = os.environ["SLACK_CLIENT_SECRET"]
+    SLACK_VERIFY_TOKEN = os.environ["SLACK_VERIFY_TOKEN"]
+except:
+    pass
+
+try:
+    from .local_settings import *
+except ImportError:
+    pass
