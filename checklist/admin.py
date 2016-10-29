@@ -1,5 +1,5 @@
 from django.contrib import admin
-from models import Checklist, Task
+from models import Checklist, Task, assignedTask
 
 # Register your models here.
 
@@ -9,3 +9,4 @@ class checklistAdmin(admin.ModelAdmin):
 
 admin.site.register(Checklist, checklistAdmin)
 admin.site.register(Task)
+admin.site.register(assignedTask)
