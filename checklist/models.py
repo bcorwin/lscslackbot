@@ -3,13 +3,18 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 # To do: function to assign a checklist to a user
-# To do: function to assign a task to a user (email user when assigned?)
+# To do: function to assign a task to a user (email user when assigned?)?
 # To do: ability to sign in using slack
 # To do: set up groups (DMCs, those that can approve DMCs,
 #           those that can approve IAs, and Admins)
 # To do: clean up admin page
 # To do: Assigned to me view (with ability to add comments and approve/deny
 # To do: My tasks view (with ability to assign them to users)
+# to do: ability to confirm/deny request and add comment
+# to do: track changes (completed, assigned, etc.) and comments
+# to do: for above, i'll probably need another model of outstanding items
+#       assignedtaskid, view all comments together, confirm/deny option, save
+#       this will then set completed = True for the assigned task
 
 
 class Checklist(models.Model):
@@ -84,7 +89,6 @@ class assignedTask(models.Model):
     task = models.ForeignKey(Task)
 
     completed = models.BooleanField(default=False)
-    awaiting_feedback = models.BooleanField(default=False)
     assigned_to = models.ForeignKey(User, null=True, blank=True,
                                     related_name='assignee')
 
