@@ -103,6 +103,7 @@ try:
     SLACK_CLIENT_ID = os.environ["SLACK_CLIENT_ID"]
     SLACK_CLIENT_SECRET = os.environ["SLACK_CLIENT_SECRET"]
     SLACK_VERIFY_TOKEN = os.environ["SLACK_VERIFY_TOKEN"]
+    SECRET_KEY = os.environ["SECRET_KEY"]
 except:
     pass
 
