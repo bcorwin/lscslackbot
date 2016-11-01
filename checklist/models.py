@@ -89,8 +89,8 @@ class assignedTask(models.Model):
     task = models.ForeignKey(Task)
 
     completed = models.BooleanField(default=False)
-    assigned_to = models.ForeignKey(User, null=True, blank=True,
-                                    related_name='assignee')
+    approved_by = models.ForeignKey(User, related_name="approvedby",
+                                    blank=True, null=True)
 
     inserted_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
@@ -98,5 +98,69 @@ class assignedTask(models.Model):
     def get_user(self):
         return self.user
 
+    def add_comment(self, text, author):
+        comment = Comment(task=self,
+                          text=text,
+                          author=author)
+        comment.save()
+
+    def request_approval(self, assigned_to):
+        request = Request(task=self, assigned_to=assigned_to)
+        request.save()
+
+    def complete_task(self, approved_by):
+        self.completed = True
+        self.approved_by = approved_by
+        self.save()
+
     def __str__(self):
         return str(self.user) + ": " + str(self.task)
+
+
+class Request(models.Model):
+    '''
+    A model to store requests
+    '''
+    task = models.OneToOneField('assignedTask')
+    assigned_to = models.ForeignKey(User)
+
+    inserted_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    def approve(self, validator):
+        self.task.complete_task(validator)
+        ap_text = "Approved by " + str(validator)
+        ap_comment = Comment(text=ap_text,
+                             author=validator,
+                             task=self.task)
+        ap_comment.save()
+        self.delete()
+
+    def deny(self, validator):
+        dy_text = "Request denied by " + str(validator)
+        dy_comment = Comment(text=dy_text,
+                             author=validator,
+                             task=self.task)
+        dy_comment.save()
+        self.delete()
+
+    def save(self, requestor, *args, **kwargs):
+        if not self.pk:  # Only do this when creating a Request
+            rq_text = "Requesting approval from " + str(self.assigned_to)
+            request_comment = Comment(text=rq_text,
+                                      author=requestor,
+                                      task=self.task)
+            request_comment.save()
+        super(Checklist, self).save(*args, **kwargs)
+
+
+class Comment(models.Model):
+    '''
+    A model to store comments
+    '''
+    text = models.CharField(max_length=1024)
+    author = models.ForeignKey(User)
+    task = models.ForeignKey(assignedTask)
+
+    inserted_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)

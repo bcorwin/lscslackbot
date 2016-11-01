@@ -14,31 +14,8 @@ class checklistAdmin(admin.ModelAdmin):
 
 
 class assignedTaskAdmin(admin.ModelAdmin):
-    list_display = ['user', 'task', 'completed', 'assigned_to']
-
-
-class myTask(assignedTask):
-    class Meta:
-        proxy = True
-
-
-class myTaskAdmin(assignedTaskAdmin):
-    def get_queryset(self, request):
-        return self.model.objects.filter(user=request.user)
-
-
-class assignedToMe(assignedTask):
-    class Meta:
-        verbose_name_plural = "Assigned to me"
-        proxy = True
-
-
-class assignedToMeAdmin(assignedTaskAdmin):
-    def get_queryset(self, request):
-        return self.model.objects.filter(assigned_to=request.user)
+    list_display = ['user', 'task', 'completed', 'approved_by']
 
 admin.site.register(Checklist, checklistAdmin)
 admin.site.register(Task)
 admin.site.register(assignedTask, assignedTaskAdmin)
-admin.site.register(myTask, myTaskAdmin)
-admin.site.register(assignedToMe, assignedToMeAdmin)
