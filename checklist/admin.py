@@ -5,6 +5,18 @@ from models import Checklist, Task, assignedTask, Comment, Request
 # to do: students can only view their tasks
 # to do: assignees can view their tasks and assigned to me
 # to do: admins can view everything
+# to do: check list maker group
+# to do: DMC Validators can validate DMCs, IA Validators can validate IAs
+
+
+class requestAdmin(admin.ModelAdmin):
+    list_display = ['task', 'requestor', 'assigned_to']
+    readonly_fields = ['requestor', 'task', 'assigned_to']
+    fields = ['task', 'requestor', 'assigned_to', 'comment', 'result']
+
+    def save_model(self, request, obj, form, change):
+        obj.approved_by = request.user
+        super(requestAdmin, self).save_model(request, obj, form, change)
 
 
 class taskInline(admin.TabularInline):
@@ -28,6 +40,10 @@ class commentInline(admin.TabularInline):
     extra = 0
     fields = ['user', 'text', 'inserted_date']
     readonly_fields = fields
+    ordering = ['inserted_date']
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
     def has_add_permission(self, request):
         return False
@@ -40,12 +56,15 @@ class addComment(admin.TabularInline):
     verbose_name_plural = "Add a Comment"
     fields = ['text']
 
+    def has_delete_permission(self, request, obj=None):
+        return False
+
     def has_change_permission(self, request, obj=None):
         return False
 
 
 class assignedTaskAdmin(admin.ModelAdmin):
-    list_display = ['task', 'completed', 'user',
+    list_display = ['task', 'user', 'completed',
                     'awaiting_approval', 'approved_by']
     fields = list_display
     readonly_fields = fields
@@ -65,4 +84,4 @@ class assignedTaskAdmin(admin.ModelAdmin):
 
 admin.site.register(Checklist, checklistAdmin)
 admin.site.register(assignedTask, assignedTaskAdmin)
-admin.site.register(Request)
+admin.site.register(Request, requestAdmin)

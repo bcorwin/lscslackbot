@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
+# to do: add a list of group(s) to who can approve a task/checklist
+# to do: function to copy a check list
 # To do: function to assign a checklist to a user
 # To do: function to email user when assigned a task
 # To do: ability to sign in using slack/gmail
@@ -11,14 +13,14 @@ from django.dispatch import receiver
 # To do: clean up admin page
 # To do: Assigned to me view (with ability to add comments and approve/deny
 # To do: My tasks view (with ability to assign them to users)
-# to do: require comment when requesting, approving, or denying
+# to do: require comment when requesting
 # to do: track changes (completed, assigned, etc.) and comments
 # to do: make it so students can assign but not complete a task
 
 
 @receiver(pre_delete)
 def delete_repo(sender, instance, **kwargs):
-    if sender == Request:
+    if sender == Request and instance.get_result() is None:
         rq_text = "Deleting request for " + str(instance.assigned_to)
         instance.task.add_comment(text=rq_text, user=instance.requestor)
 
@@ -109,6 +111,17 @@ class assignedTask(models.Model):
             return False
     awaiting_approval.boolean = True
 
+    def approve(self, user):
+        self.completed = True
+        self.approved_by = user
+        self.add_comment(text="Approved", user=user)
+        self.save()
+
+    def deny(self, user):
+        self.completed = False
+        self.add_comment(text="Denied", user=user)
+        self.save()
+
     def get_user(self):
         return self.user
 
@@ -122,7 +135,7 @@ class assignedTask(models.Model):
         self.save()
 
     def __str__(self):
-        return str(self.user) + ": " + str(self.task)
+        return str(self.task)
 
 
 class Request(models.Model):
@@ -131,10 +144,21 @@ class Request(models.Model):
     '''
     task = models.OneToOneField('assignedTask')
     requestor = models.ForeignKey(User, related_name="requestor")
-    assigned_to = models.ForeignKey(User, related_name="assigned_to")
+    assigned_to = models.ForeignKey(User,
+                                    related_name="assigned_to")
+
+    comment = models.TextField(max_length=1024, default='')
+    result = models.CharField(max_length=1,
+                              choices=(('A', 'Approve'), ('D', 'Deny')))
+    approved_by = models.ForeignKey(User,
+                                    related_name="approved_by",
+                                    null=True, blank=True)
 
     inserted_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+
+    def get_result(self):
+        return self.result
 
     def save(self, *args, **kwargs):
         if not self.pk:  # Only do this when creating a Request
@@ -143,9 +167,17 @@ class Request(models.Model):
         else:
             orig = Request.objects.get(pk=self.pk)
             if orig.assigned_to != self.assigned_to:
+                # If the assigned to person changes, make note of that
                 rq_text = "Now requesting approval from " + \
                     str(self.assigned_to)
                 self.task.add_comment(text=rq_text, user=self.requestor)
+            elif self.comment != '':
+                self.task.add_comment(text=self.comment, user=self.requestor)
+                if self.result == "A":
+                    self.task.approve(self.approved_by)
+                elif self.result == "D":
+                    self.task.deny(self.approved_by)
+                return self.delete()
         super(Request, self).save(*args, **kwargs)
 
 
@@ -153,7 +185,7 @@ class Comment(models.Model):
     '''
     A model to store comments
     '''
-    text = models.CharField(max_length=1024)
+    text = models.TextField(max_length=1024)
     user = models.ForeignKey(User)
     task = models.ForeignKey(assignedTask)
 
