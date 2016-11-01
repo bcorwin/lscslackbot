@@ -7,6 +7,21 @@ from models import Checklist, Task, assignedTask, Comment, Request
 # to do: admins can view everything
 # to do: check list maker group
 # to do: DMC Validators can validate DMCs, IA Validators can validate IAs
+# to do: can't assign to self
+
+
+def copy_checklist(modeladmin, request, queryset):
+    for checklist in queryset:
+        checklist.save()
+        tasks = Task.objects.filter(checklist=checklist)
+
+        checklist.pk = None
+        checklist.name += " copy"
+        checklist.save()
+        for task in tasks:
+            task.pk = None
+            task.checklist = checklist
+            task.save()
 
 
 class requestAdmin(admin.ModelAdmin):
@@ -27,6 +42,7 @@ class taskInline(admin.TabularInline):
 class checklistAdmin(admin.ModelAdmin):
     list_display = ['name', 'dmc_default', 'ia_default']
     inlines = [taskInline]
+    actions = [copy_checklist]
 
 
 class requestInline(admin.TabularInline):

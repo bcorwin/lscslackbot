@@ -114,13 +114,14 @@ class assignedTask(models.Model):
     def approve(self, user):
         self.completed = True
         self.approved_by = user
-        self.add_comment(text="Approved", user=user)
         self.save()
+        self.add_comment(text="Approved", user=user)
 
     def deny(self, user):
         self.completed = False
-        self.add_comment(text="Denied", user=user)
+        self.approved_by = None
         self.save()
+        self.add_comment(text="Denied", user=user)
 
     def get_user(self):
         return self.user
