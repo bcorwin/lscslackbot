@@ -17,6 +17,8 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from checklist import views
 
+admin.autodiscover()
+
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^add/', views.add_app),

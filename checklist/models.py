@@ -1,20 +1,26 @@
 from django.db import models
 from django.contrib.auth.models import User
-# Create your models here.
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 # To do: function to assign a checklist to a user
-# To do: function to assign a task to a user (email user when assigned?)?
-# To do: ability to sign in using slack
+# To do: function to email user when assigned a task
+# To do: ability to sign in using slack/gmail
 # To do: set up groups (DMCs, those that can approve DMCs,
 #           those that can approve IAs, and Admins)
 # To do: clean up admin page
 # To do: Assigned to me view (with ability to add comments and approve/deny
 # To do: My tasks view (with ability to assign them to users)
-# to do: ability to confirm/deny request and add comment
+# to do: require comment when requesting, approving, or denying
 # to do: track changes (completed, assigned, etc.) and comments
-# to do: for above, i'll probably need another model of outstanding items
-#       assignedtaskid, view all comments together, confirm/deny option, save
-#       this will then set completed = True for the assigned task
+# to do: make it so students can assign but not complete a task
+
+
+@receiver(pre_delete)
+def delete_repo(sender, instance, **kwargs):
+    if sender == Request:
+        rq_text = "Deleting request for " + str(instance.assigned_to)
+        instance.task.add_comment(text=rq_text, user=instance.requestor)
 
 
 class Checklist(models.Model):
@@ -95,18 +101,20 @@ class assignedTask(models.Model):
     inserted_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
+    def awaiting_approval(self):
+        try:
+            self.request is None
+            return True
+        except:
+            return False
+    awaiting_approval.boolean = True
+
     def get_user(self):
         return self.user
 
-    def add_comment(self, text, author):
-        comment = Comment(task=self,
-                          text=text,
-                          author=author)
+    def add_comment(self, text, user):
+        comment = Comment(text=text, user=user, task=self)
         comment.save()
-
-    def request_approval(self, assigned_to):
-        request = Request(task=self, assigned_to=assigned_to)
-        request.save()
 
     def complete_task(self, approved_by):
         self.completed = True
@@ -122,36 +130,23 @@ class Request(models.Model):
     A model to store requests
     '''
     task = models.OneToOneField('assignedTask')
-    assigned_to = models.ForeignKey(User)
+    requestor = models.ForeignKey(User, related_name="requestor")
+    assigned_to = models.ForeignKey(User, related_name="assigned_to")
 
     inserted_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
-    def approve(self, validator):
-        self.task.complete_task(validator)
-        ap_text = "Approved by " + str(validator)
-        ap_comment = Comment(text=ap_text,
-                             author=validator,
-                             task=self.task)
-        ap_comment.save()
-        self.delete()
-
-    def deny(self, validator):
-        dy_text = "Request denied by " + str(validator)
-        dy_comment = Comment(text=dy_text,
-                             author=validator,
-                             task=self.task)
-        dy_comment.save()
-        self.delete()
-
-    def save(self, requestor, *args, **kwargs):
+    def save(self, *args, **kwargs):
         if not self.pk:  # Only do this when creating a Request
             rq_text = "Requesting approval from " + str(self.assigned_to)
-            request_comment = Comment(text=rq_text,
-                                      author=requestor,
-                                      task=self.task)
-            request_comment.save()
-        super(Checklist, self).save(*args, **kwargs)
+            self.task.add_comment(text=rq_text, user=self.requestor)
+        else:
+            orig = Request.objects.get(pk=self.pk)
+            if orig.assigned_to != self.assigned_to:
+                rq_text = "Now requesting approval from " + \
+                    str(self.assigned_to)
+                self.task.add_comment(text=rq_text, user=self.requestor)
+        super(Request, self).save(*args, **kwargs)
 
 
 class Comment(models.Model):
@@ -159,7 +154,7 @@ class Comment(models.Model):
     A model to store comments
     '''
     text = models.CharField(max_length=1024)
-    author = models.ForeignKey(User)
+    user = models.ForeignKey(User)
     task = models.ForeignKey(assignedTask)
 
     inserted_date = models.DateTimeField(auto_now_add=True)
