@@ -7,8 +7,8 @@ from models import Checklist, Task, assignedTask, Comment, Request
 # to do: admins can view everything
 # to do: check list maker group
 # to do: DMC Validators can validate DMCs, IA Validators can validate IAs
-# to do: can't assign to self
-
+# to do: can't assign/validate to self
+# to do: requestor and validator can't be the same
 
 def copy_checklist(modeladmin, request, queryset):
     for checklist in queryset:

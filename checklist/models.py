@@ -4,7 +4,6 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
 # to do: add a list of group(s) to who can approve a task/checklist
-# to do: function to copy a check list
 # To do: function to assign a checklist to a user
 # To do: function to email user when assigned a task
 # To do: ability to sign in using slack/gmail
@@ -13,8 +12,6 @@ from django.dispatch import receiver
 # To do: clean up admin page
 # To do: Assigned to me view (with ability to add comments and approve/deny
 # To do: My tasks view (with ability to assign them to users)
-# to do: require comment when requesting
-# to do: track changes (completed, assigned, etc.) and comments
 # to do: make it so students can assign but not complete a task
 
 
@@ -173,7 +170,7 @@ class Request(models.Model):
                     str(self.assigned_to)
                 self.task.add_comment(text=rq_text, user=self.requestor)
             elif self.comment != '':
-                self.task.add_comment(text=self.comment, user=self.requestor)
+                self.task.add_comment(text=self.comment, user=self.approved_by)
                 if self.result == "A":
                     self.task.approve(self.approved_by)
                 elif self.result == "D":
