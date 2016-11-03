@@ -13,6 +13,9 @@ from django.dispatch import receiver
 # To do: Assigned to me view (with ability to add comments and approve/deny
 # To do: My tasks view (with ability to assign them to users)
 # to do: make it so students can assign but not complete a task
+# to do: create a user to checklist table (addlUserInfo so it can be expanded)
+#       update Task.save() when I make the above
+#       This will be useful for the assign checklist to user function
 
 
 @receiver(pre_delete)
@@ -78,7 +81,7 @@ class Task(models.Model):
 
     def save(self, *args, **kwargs):
         super(Task, self).save(*args, **kwargs)
-        # Add task to all users that have that checklist
+        # Add task to all users that have that checklist (use future table)
         for user in self.checklist.get_users():
             assignedTask.objects.create(user=user, task=self)
 
