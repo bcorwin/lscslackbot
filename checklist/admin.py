@@ -1,5 +1,6 @@
 from django.contrib import admin
-from models import Checklist, Task, assignedTask, Comment, Request
+from models import Checklist, Task, assignedTask, Comment, Request, \
+    assignedChecklist
 
 # to do: filterable fields
 # to do: students can only view their tasks
@@ -9,6 +10,8 @@ from models import Checklist, Task, assignedTask, Comment, Request
 # to do: DMC Validators can validate DMCs, IA Validators can validate IAs
 # to do: can't assign/validate to self
 # to do: requestor and validator can't be the same
+# to do: make it so deleting assignedChecklist gives warning about cascadge
+
 
 def copy_checklist(modeladmin, request, queryset):
     for checklist in queryset:
@@ -39,9 +42,14 @@ class taskInline(admin.TabularInline):
     extra = 1
 
 
+class assignedChecklistInline(admin.TabularInline):
+    model = assignedChecklist
+    extra = 0
+
+
 class checklistAdmin(admin.ModelAdmin):
     list_display = ['name', 'dmc_default', 'ia_default']
-    inlines = [taskInline]
+    inlines = [taskInline, assignedChecklistInline]
     actions = [copy_checklist]
 
 
@@ -80,8 +88,8 @@ class addComment(admin.TabularInline):
 
 
 class assignedTaskAdmin(admin.ModelAdmin):
-    list_display = ['task', 'user', 'completed',
-                    'awaiting_approval', 'approved_by']
+    # to do: add user from assigned checklist
+    list_display = ['task', 'completed', 'awaiting_approval', 'approved_by']
     fields = list_display
     readonly_fields = fields
     inlines = [commentInline, addComment, requestInline]

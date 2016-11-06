@@ -4,7 +4,6 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
 # to do: add a list of group(s) to who can approve a task/checklist
-# To do: function to assign a checklist to a user
 # To do: function to email user when assigned a task
 # To do: ability to sign in using slack/gmail
 # To do: set up groups (DMCs, those that can approve DMCs,
@@ -13,9 +12,6 @@ from django.dispatch import receiver
 # To do: Assigned to me view (with ability to add comments and approve/deny
 # To do: My tasks view (with ability to assign them to users)
 # to do: make it so students can assign but not complete a task
-# to do: create a user to checklist table (addlUserInfo so it can be expanded)
-#       update Task.save() when I make the above
-#       This will be useful for the assign checklist to user function
 
 
 @receiver(pre_delete)
@@ -37,9 +33,14 @@ class Checklist(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
 
     def get_users(self):
-        assigned_tasks = assignedTask.objects.filter(task__checklist=self)
-        users = set([task.get_user() for task in assigned_tasks])
+        assignments = assignedChecklist.objects.filter(checklist=self)
+        users = set([task.get_user() for task in assignments])
         return users
+
+    def add_task(self, task):
+        assignments = assignedChecklist.objects.filter(checklist=self)
+        for assign in assignments:
+            assignedTask.objects.create(assigned_checklist=assign, task=task)
 
     def save(self, *args, **kwargs):
         # To do: Force at least one recrod to be default?
@@ -81,19 +82,39 @@ class Task(models.Model):
 
     def save(self, *args, **kwargs):
         super(Task, self).save(*args, **kwargs)
-        # Add task to all users that have that checklist (use future table)
-        for user in self.checklist.get_users():
-            assignedTask.objects.create(user=user, task=self)
+        # Add task to all users that have that checklist
+        self.checklist.add_task(self)
 
     def __str__(self):
         return self.text
+
+
+class assignedChecklist(models.Model):
+    '''
+    A model to store which checklists are assigned to a user
+    '''
+    user = models.ForeignKey(User)
+    checklist = models.ForeignKey(Checklist)
+
+    inserted_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    def get_user(self):
+        return self.user
+
+    def save(self, *args, **kwargs):
+        super(assignedChecklist, self).save(*args, **kwargs)
+        # when saving, create assignedTasks for that user
+        tasks = Task.objects.filter(checklist=self.checklist)
+        for task in tasks:
+            assignedTask.objects.create(assigned_checklist=self, task=task)
 
 
 class assignedTask(models.Model):
     '''
     A model to store tasks that have been assigned to a user
     '''
-    user = models.ForeignKey(User)
+    assigned_checklist = models.ForeignKey(assignedChecklist)
     task = models.ForeignKey(Task)
 
     completed = models.BooleanField(default=False)
@@ -124,7 +145,7 @@ class assignedTask(models.Model):
         self.add_comment(text="Denied", user=user)
 
     def get_user(self):
-        return self.user
+        return self.assigned_checklist.get_user()
 
     def add_comment(self, text, user):
         comment = Comment(text=text, user=user, task=self)
