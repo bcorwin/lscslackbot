@@ -10,7 +10,6 @@ from models import Checklist, Task, assignedTask, Comment, Request, \
 # to do: DMC Validators can validate DMCs, IA Validators can validate IAs
 # to do: can't assign/validate to self
 # to do: requestor and validator can't be the same
-# to do: make it so deleting assignedChecklist gives warning about cascadge
 
 
 def copy_checklist(modeladmin, request, queryset):
@@ -45,6 +44,11 @@ class taskInline(admin.TabularInline):
 class assignedChecklistInline(admin.TabularInline):
     model = assignedChecklist
     extra = 0
+
+    # Unable to have the cascade delete warning show (known django bug) so
+    # remove ability and require deleting individual assignedTasks
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class checklistAdmin(admin.ModelAdmin):
@@ -88,8 +92,8 @@ class addComment(admin.TabularInline):
 
 
 class assignedTaskAdmin(admin.ModelAdmin):
-    # to do: add user from assigned checklist
-    list_display = ['task', 'completed', 'awaiting_approval', 'approved_by']
+    list_display = ['task', 'completed', 'awaiting_approval',
+                    'get_user', 'approved_by']
     fields = list_display
     readonly_fields = fields
     inlines = [commentInline, addComment, requestInline]

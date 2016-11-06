@@ -16,7 +16,7 @@ from django.dispatch import receiver
 
 @receiver(pre_delete)
 def delete_repo(sender, instance, **kwargs):
-    if sender == Request and instance.get_result() is None:
+    if sender == Request and instance.get_result() == '':
         rq_text = "Deleting request for " + str(instance.assigned_to)
         instance.task.add_comment(text=rq_text, user=instance.requestor)
 
@@ -146,6 +146,7 @@ class assignedTask(models.Model):
 
     def get_user(self):
         return self.assigned_checklist.get_user()
+    get_user.short_description = 'User'
 
     def add_comment(self, text, user):
         comment = Comment(text=text, user=user, task=self)
@@ -213,3 +214,9 @@ class Comment(models.Model):
 
     inserted_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+
+
+class Validator(models.Model):
+    '''
+    A model to store which admin groups can approve a checklist
+    '''
