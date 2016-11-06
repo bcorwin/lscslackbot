@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
@@ -216,7 +216,15 @@ class Comment(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
 
 
-class Validator(models.Model):
+class approvalGroup(models.Model):
     '''
     A model to store which admin groups can approve a checklist
     '''
+    checklist = models.ForeignKey(Checklist)
+    group = models.ForeignKey(Group)
+
+    inserted_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    def get_group(self):
+        return self.group

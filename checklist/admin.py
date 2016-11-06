@@ -1,6 +1,6 @@
 from django.contrib import admin
 from models import Checklist, Task, assignedTask, Comment, Request, \
-    assignedChecklist
+    assignedChecklist, approvalGroup
 
 # to do: filterable fields
 # to do: students can only view their tasks
@@ -41,6 +41,11 @@ class taskInline(admin.TabularInline):
     extra = 1
 
 
+class approvalGroupInline(admin.TabularInline):
+    model = approvalGroup
+    extra = 0
+
+
 class assignedChecklistInline(admin.TabularInline):
     model = assignedChecklist
     extra = 0
@@ -53,7 +58,7 @@ class assignedChecklistInline(admin.TabularInline):
 
 class checklistAdmin(admin.ModelAdmin):
     list_display = ['name', 'dmc_default', 'ia_default']
-    inlines = [taskInline, assignedChecklistInline]
+    inlines = [taskInline, assignedChecklistInline, approvalGroupInline]
     actions = [copy_checklist]
 
 
