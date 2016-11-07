@@ -7,8 +7,7 @@ from django.dispatch import receiver
 # To do: ability to sign in using slack/gmail
 # To do: set up groups (DMCs, those that can approve DMCs,
 #           those that can approve IAs, and Admins)
-# To do: clean up admin page
-# to do: make it so students can assign but not complete a task?
+# bug: assigning a checklists to a user more than once doubles their tasks
 
 
 @receiver(pre_delete)
@@ -138,6 +137,10 @@ class assignedTask(models.Model):
     inserted_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        verbose_name = "My Task"
+        verbose_name_plural = "My Tasks"
+
     def awaiting_approval(self):
         try:
             self.request is None
@@ -197,6 +200,10 @@ class Request(models.Model):
 
     inserted_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "My Outstanding Request"
+        verbose_name_plural = "My Outstanding Requests"
 
     def get_result(self):
         return self.result

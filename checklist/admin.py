@@ -3,12 +3,8 @@ from models import Checklist, Task, assignedTask, Comment, Request, \
     assignedChecklist, approvalGroup
 
 # to do: filterable fields
-# to do: students can only view their tasks
-# to do: assignees can view their tasks and assigned to me
 # to do: admins can view everything
 # to do: check list maker group
-# To do: Assigned to me view (with ability to add comments and approve/deny
-# To do: My tasks view (with ability to assign them to users)
 # to do: reduce options in the admin user form
 
 
@@ -31,9 +27,16 @@ class requestAdmin(admin.ModelAdmin):
     readonly_fields = ['requestor', 'task', 'assigned_to']
     fields = ['task', 'requestor', 'assigned_to', 'comment', 'result']
 
+    def get_queryset(self, request):
+        # only show your requests
+        return self.model.objects.filter(assigned_to=request.user)
+
     def save_model(self, request, obj, form, change):
         obj.approved_by = request.user
         super(requestAdmin, self).save_model(request, obj, form, change)
+
+    def has_add_permission(self, request):
+        return False
 
 
 class taskInline(admin.TabularInline):
@@ -117,6 +120,10 @@ class assignedTaskAdmin(admin.ModelAdmin):
     readonly_fields = fields
     inlines = [commentInline, addComment, requestInline]
 
+    class Meta:
+        verbose_name = 'My task'
+        verbose_name_plural = 'My tasks'
+
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
         for instance in instances:
@@ -129,6 +136,15 @@ class assignedTaskAdmin(admin.ModelAdmin):
         super(assignedTaskAdmin, self). \
             save_formset(request, form, formset, change)
 
+    def get_queryset(self, request):
+        # only show your tasks
+        return self.model.objects.filter(assigned_checklist__user=request.user)
+
+    def has_add_permission(self, request):
+        return False
+
+
 admin.site.register(Checklist, checklistAdmin)
 admin.site.register(assignedTask, assignedTaskAdmin)
 admin.site.register(Request, requestAdmin)
+admin.site.register(assignedChecklist)
