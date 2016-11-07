@@ -16,6 +16,7 @@ from django.dispatch import receiver
 
 @receiver(pre_delete)
 def delete_repo(sender, instance, **kwargs):
+    # Add a comment to an assigned task when deleting a request
     if sender == Request and instance.get_result() == '':
         rq_text = "Deleting request for " + str(instance.assigned_to)
         instance.task.add_comment(text=rq_text, user=instance.requestor)
@@ -38,6 +39,7 @@ class Checklist(models.Model):
         return users
 
     def add_task(self, task):
+        # Add an assigned task object for a (new) task in a checklist
         assignments = assignedChecklist.objects.filter(checklist=self)
         for assign in assignments:
             assignedTask.objects.create(assigned_checklist=assign, task=task)
@@ -108,6 +110,9 @@ class assignedChecklist(models.Model):
         tasks = Task.objects.filter(checklist=self.checklist)
         for task in tasks:
             assignedTask.objects.create(assigned_checklist=self, task=task)
+
+    def __str__(self):
+        return str(self.checklist) + " is assigned to " + str(self.user)
 
 
 class assignedTask(models.Model):
