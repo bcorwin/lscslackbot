@@ -67,6 +67,14 @@ class requestInline(admin.TabularInline):
     fields = ['assigned_to']
     verbose_name_plural = "Request Approval"
 
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        if db_field.name == "assigned_to":
+            parent_obj_id = request.resolver_match.args[0]
+            parent_obj = assignedTask.objects.get(pk=parent_obj_id)
+            kwargs['queryset'] = parent_obj.get_approved_users()
+        return super(requestInline, self). \
+            formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 class commentInline(admin.TabularInline):
     model = Comment

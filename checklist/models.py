@@ -12,6 +12,7 @@ from django.dispatch import receiver
 # To do: Assigned to me view (with ability to add comments and approve/deny
 # To do: My tasks view (with ability to assign them to users)
 # to do: make it so students can assign but not complete a task
+# to do: reduce options in the admin user form
 
 
 @receiver(pre_delete)
@@ -33,7 +34,16 @@ class Checklist(models.Model):
     inserted_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
+    def get_approved_users(self):
+        # Get a query set of users approved to validate this checklist
+        approved_groups = approvalGroup.objects.filter(checklist=self)
+        group_ids = [group.get_group().id for group in approved_groups]
+        groups = Group.objects.filter(id__in=group_ids)
+        approved_users = User.objects.filter(groups__in=groups)
+        return approved_users
+
     def get_users(self):
+        # Get a set of all users that have this checklist assigned to them
         assignments = assignedChecklist.objects.filter(checklist=self)
         users = set([task.get_user() for task in assignments])
         return users
@@ -104,6 +114,9 @@ class assignedChecklist(models.Model):
     def get_user(self):
         return self.user
 
+    def get_checklist(self):
+        return self.checklist
+
     def save(self, *args, **kwargs):
         super(assignedChecklist, self).save(*args, **kwargs)
         # when saving, create assignedTasks for that user
@@ -148,6 +161,10 @@ class assignedTask(models.Model):
         self.approved_by = None
         self.save()
         self.add_comment(text="Denied", user=user)
+
+    def get_approved_users(self):
+        checklist = self.assigned_checklist.get_checklist()
+        return checklist .get_approved_users()
 
     def get_user(self):
         return self.assigned_checklist.get_user()
@@ -233,3 +250,6 @@ class approvalGroup(models.Model):
 
     def get_group(self):
         return self.group
+
+    def __str__(self):
+        return str(self.group) + " can approve " + str(self.checklist)
