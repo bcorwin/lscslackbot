@@ -221,6 +221,10 @@ class Request(models.Model):
                 return self.delete()
         super(Request, self).save(*args, **kwargs)
 
+    def __str__(self):
+        return str(self.requestor) + " is requesting approval from " + \
+                str(self.assigned_to)
+
 
 class Comment(models.Model):
     '''
@@ -232,6 +236,9 @@ class Comment(models.Model):
 
     inserted_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.text
 
 
 class approvalGroup(models.Model):
