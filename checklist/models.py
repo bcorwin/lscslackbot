@@ -3,16 +3,12 @@ from django.contrib.auth.models import User, Group
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
-# to do: add a list of group(s) to who can approve a task/checklist
 # To do: function to email user when assigned a task
 # To do: ability to sign in using slack/gmail
 # To do: set up groups (DMCs, those that can approve DMCs,
 #           those that can approve IAs, and Admins)
 # To do: clean up admin page
-# To do: Assigned to me view (with ability to add comments and approve/deny
-# To do: My tasks view (with ability to assign them to users)
-# to do: make it so students can assign but not complete a task
-# to do: reduce options in the admin user form
+# to do: make it so students can assign but not complete a task?
 
 
 @receiver(pre_delete)

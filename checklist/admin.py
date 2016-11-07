@@ -7,9 +7,9 @@ from models import Checklist, Task, assignedTask, Comment, Request, \
 # to do: assignees can view their tasks and assigned to me
 # to do: admins can view everything
 # to do: check list maker group
-# to do: DMC Validators can validate DMCs, IA Validators can validate IAs
-# to do: can't assign/validate to self
-# to do: requestor and validator can't be the same
+# To do: Assigned to me view (with ability to add comments and approve/deny
+# To do: My tasks view (with ability to assign them to users)
+# to do: reduce options in the admin user form
 
 
 def copy_checklist(modeladmin, request, queryset):
@@ -68,10 +68,16 @@ class requestInline(admin.TabularInline):
     verbose_name_plural = "Request Approval"
 
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        # Only approved users can be requested based on approvalGroups
         if db_field.name == "assigned_to":
-            parent_obj_id = request.resolver_match.args[0]
-            parent_obj = assignedTask.objects.get(pk=parent_obj_id)
-            kwargs['queryset'] = parent_obj.get_approved_users()
+            obj_id = request.resolver_match.args[0]
+            obj = assignedTask.objects.get(pk=obj_id)
+            approved_users = obj.get_approved_users()
+            # exclude logged in user
+            approved_users = approved_users.exclude(pk=request.user.id)
+            # exclude task user
+            approved_users = approved_users.exclude(pk=obj.get_user().id)
+            kwargs['queryset'] = approved_users
         return super(requestInline, self). \
             formfield_for_foreignkey(db_field, request, **kwargs)
 
